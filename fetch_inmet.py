@@ -1,4 +1,3 @@
-\
 import os, re, io, zipfile, argparse, unicodedata
 from datetime import datetime
 from pathlib import Path
@@ -23,8 +22,8 @@ def get(session: requests.Session, url: str, **kw) -> requests.Response:
     r.raise_for_status()
     return r
 
-def find_year_links(html: str) -> Dict[int,str]:
-    soup = BeautifulSoup(html, "html.parser")
+def find_year_links(html: str) -> Dict[int, str]:
+    soup = BeautifulSoup(html, "html.parser")  # parser mais tolerante
     links = {}
     for a in soup.find_all("a"):
         text = (a.get_text() or "").upper()
@@ -38,7 +37,7 @@ def find_year_links(html: str) -> Dict[int,str]:
     return links
 
 def find_zip_links(html: str) -> List[str]:
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "html.parser")  # parser mais tolerante
     out = []
     for a in soup.find_all("a"):
         href = a.get("href") or ""
@@ -64,7 +63,7 @@ def try_read_csv(bytes_content: bytes) -> pd.DataFrame:
     return pd.read_csv(io.BytesIO(bytes_content), encoding="latin-1", low_memory=False)
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    import numpy as np, re, unicodedata
+    import numpy as np
     def norm(c):
         c2 = unicodedata.normalize("NFKD", str(c)).encode("ascii","ignore").decode("ascii").upper()
         c2 = re.sub(r"[^A-Z0-9]+","_", c2).strip("_")
@@ -122,8 +121,21 @@ def download_and_extract_for_year(session: requests.Session, year: int, out_raw:
         print(f"Nenhum link encontrado para o ano {year}.")
         return []
 
-    res_y = get(session, year_links[year])
-    zip_links = find_zip_links(res_y.text)
+    year_url = year_links[year]
+    res_y = get(session, year_url)
+
+    # --- Tratamento para link direto ZIP ---
+    content_type = res_y.headers.get("Content-Type", "").lower()
+    if "text/html" not in content_type:
+        print(f"[{year}] Link direto para arquivo detectado (Content-Type: {content_type})")
+        zip_links = [year_url]
+    else:
+        try:
+            zip_links = find_zip_links(res_y.text)
+        except Exception as e:
+            print(f"[{year}] Erro ao parsear HTML: {e}")
+            return []
+
     out_dfs = []
     for zurl in tqdm(zip_links, desc=f"{year} - zips"):
         try:
@@ -137,7 +149,7 @@ def download_and_extract_for_year(session: requests.Session, year: int, out_raw:
                     df = try_read_csv(bytes_csv)
                     out_dfs.append(normalize_columns(df))
         except Exception as e:
-            print(f"Falha no arquivo {zurl}: {e}")
+            print(f"[{year}] Falha no arquivo {zurl}: {e}")
     return out_dfs
 
 def main():
@@ -176,3 +188,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
