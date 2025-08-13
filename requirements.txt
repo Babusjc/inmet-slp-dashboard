@@ -1,0 +1,11 @@
+# Dependências do projeto
+streamlit
+pandas
+numpy
+plotly
+scikit-learn
+requests
+beautifulsoup4
+lxml
+tqdm
+python-dateutil
