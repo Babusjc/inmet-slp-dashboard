@@ -2,11 +2,11 @@ name: Collect INMET Data
 
 on:
   schedule:
-    - cron: "0 0 * * 0"
-  workflow_dispatch:
+    - cron: "0 0 * * 0" # roda todo domingo à meia-noite
+  workflow_dispatch: # permite executar manualmente pelo GitHub
 
 permissions:
-  contents: write
+  contents: write # permite push no repositório
 
 jobs:
   fetch-data:
@@ -42,4 +42,5 @@ jobs:
           else
             echo "Nenhuma alteração para enviar."
           fi
+
 
