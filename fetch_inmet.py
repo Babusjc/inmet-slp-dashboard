@@ -24,7 +24,7 @@ def get(session: requests.Session, url: str, **kw) -> requests.Response:
     return r
 
 def find_year_links(html: str) -> Dict[int,str]:
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     links = {}
     for a in soup.find_all("a"):
         text = (a.get_text() or "").upper()
@@ -38,7 +38,7 @@ def find_year_links(html: str) -> Dict[int,str]:
     return links
 
 def find_zip_links(html: str) -> List[str]:
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "html.parser")
     out = []
     for a in soup.find_all("a"):
         href = a.get("href") or ""
