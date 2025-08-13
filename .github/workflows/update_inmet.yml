@@ -1,32 +1,40 @@
-name: Update INMET data
+name: Collect INMET Data
+
 on:
   schedule:
-    - cron: "0 9 1 * *"
+    - cron: "0 0 * * 0"
   workflow_dispatch:
-permissions:
-  contents: write
+
 jobs:
-  update:
+  fetch-data:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
-      - name: Install deps
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Fetch INMET data
+
+      - name: FETCH INMET DATA
         run: |
           python fetch_inmet.py --years all --raw_dir data/raw --combined data/inmet_data_sao_luiz_do_paraitinga_combined.csv
-      - name: Commit & push if changed
+
+      - name: COMMIT & PUSH IF CHANGED
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if ! git diff --cached --quiet; then
-            git commit -m "Auto-update INMET data"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add data/
+            git commit -m "Update INMET data [skip ci]"
             git push
           else
-            echo "No changes to commit."
+            echo "Nenhuma alteração para enviar."
+          fi
+
