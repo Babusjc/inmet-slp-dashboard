@@ -75,7 +75,6 @@ def try_read_csv(bytes_content: bytes) -> pd.DataFrame:
     return pd.DataFrame()
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    import numpy as np
     def norm(c):
         c2 = unicodedata.normalize("NFKD", str(c)).encode("ascii","ignore").decode("ascii").upper()
         c2 = re.sub(r"[^A-Z0-9]+","_", c2).strip("_")
@@ -151,10 +150,16 @@ def main():
         all_dfs.extend(dfs)
 
     if not all_dfs:
-        print("Nenhum dado encontrado.")
+        print("Nenhum dado encontrado para nenhum ano.")
         return
 
-    df_all = pd.concat(all_dfs, ignore_index=True)
+    # Filtra apenas DataFrames com a coluna DATA
+    valid_dfs = [df for df in all_dfs if "DATA" in df.columns and not df.empty]
+    if not valid_dfs:
+        print("Nenhum dado válido com coluna DATA encontrado.")
+        return
+
+    df_all = pd.concat(valid_dfs, ignore_index=True)
     df_all = df_all.dropna(subset=["DATA"]).sort_values("DATA").drop_duplicates(subset=["DATA"])
 
     out_path = Path(args.combined)
@@ -164,5 +169,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
